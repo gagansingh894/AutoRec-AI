@@ -1,0 +1,31 @@
+version: "3"
+
+services:
+    api:
+        build: ./App/API
+        container_name: fileuploadms
+        network_mode: host
+        volumes:
+            - uploadedimgs:/usr/src/app
+    
+    ms1:
+        build: ./App/MS1
+        container_name: objectdetectionms
+        network_mode: host
+        volumes:
+            - uploadedimgs:/usr/src/app        
+
+    ms2:
+        build: ./App/MS2 
+        container_name: classificationms
+        network_mode: host
+        volumes:
+            - uploadedimgs:/usr/src/app
+
+    ms3:
+        build: ./App/MS3
+        container_name: recommendationsystemms
+        network_mode: host
+
+volumes:
+    uploadedimgs:
