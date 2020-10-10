@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <link href= {{ url_for('static', filename="/css/result.css") }}  rel="stylesheet">
+    <title>Project</title>
+  </head>
+<div class="container">
+	<h3 style="text-align:center"> You have uploaded an image of {{ rcmds[0].make + ' ' +rcmds[0].model }}. The details are shown below </h3>
+  <!-- <div class="row"> -->
+    <div class="row-cols-md-3">
+      <div class="card" id='user'>
+        <img class="card-img-top" src={{ "/static/uploads/" + file }}>
+        <div class="card-body">
+          <h4 class="card-title"><strong>{{ rcmds[0].make + ' ' +rcmds[0].model }}</strong></h4>
+          <p class="card-text"><strong>Engine Displacement: </strong>{{ rcmds[0].displacement }}</p>
+          <p class="card-text"><strong>Horsepower: </strong>{{ rcmds[0].sae_net_horsepower_at_rpm }}</p>
+          <p class="card-text"><strong>Gas Mileage: </strong>{{ rcmds[0].gas_mileage }}</p>
+          <p class="card-text"><strong>Passenger Capacity: </strong>{{ rcmds[0].passenger_capacity }}</p>
+          <p class="card-text"><strong>Price: </strong>{{ rcmds[0].msrp }}</p>
+        </div>
+      </div>
+    </div>
+  <!-- </div> -->
+		<h3 style="text-align:center;">Here are some cars which are similar to {{ rcmds[0].make + ' ' +rcmds[0].model }} </h3>
+</div>
+<div class="container-fluid mb-4">
+  <div class="row justify-content-center row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
+    <div class="col-sm-4">
+      <div class="card">
+        <img class="card-img-top" src={{ "/static/assets/" + rcmds[1].img_file }}>
+        <div class="card-body">
+          <h4 class="card-title"><strong>{{ rcmds[1].make + ' ' +rcmds[1].model }}</strong></h4>
+          <p class="card-text"><strong>Engine Displacement: </strong>{{ rcmds[1].displacement }}</p>
+          <p class="card-text"><strong>Horsepower: </strong>{{ rcmds[1].sae_net_horsepower_at_rpm }}</p>
+          <p class="card-text"><strong>Gas Mileage: </strong>{{ rcmds[1].gas_mileage }}</p>
+          <p class="card-text"><strong>Passenger Capacity: </strong>{{ rcmds[1].passenger_capacity }}</p>
+          <p class="card-text"><strong>Price: </strong>{{ rcmds[1].msrp }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="card">
+        <img class="card-img-top" src={{ "/static/assets/" + rcmds[2].img_file }}>
+        <div class="card-body">
+          <h4 class="card-title"><strong>{{ rcmds[2].make + ' ' +rcmds[2].model }}</strong></h4>
+          <p class="card-text"><strong>Engine Displacement: </strong>{{ rcmds[2].displacement }}</p>
+          <p class="card-text"><strong>Horsepower: </strong>{{ rcmds[2].sae_net_horsepower_at_rpm }}</p>
+          <p class="card-text"><strong>Gas Mileage: </strong>{{ rcmds[2].gas_mileage }}</p>
+          <p class="card-text"><strong>Passenger Capacity: </strong>{{ rcmds[2].passenger_capacity }}</p>
+          <p class="card-text"><strong>Price: </strong>{{ rcmds[2].msrp }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-4">
+      <div class="card">
+        <img class="card-img-top" src={{ "/static/assets/" + rcmds[3].img_file }}>
+        <div class="card-body">
+          <h4 class="card-title"><strong>{{ rcmds[3].make + ' ' +rcmds[3].model }}</strong></h4>
+          <p class="card-text"><strong>Engine Displacement: </strong>{{ rcmds[3].displacement }}</p>
+          <p class="card-text"><strong>Horsepower: </strong>{{ rcmds[3].sae_net_horsepower_at_rpm }}</p>
+          <p class="card-text"><strong>Gas Mileage: </strong>{{ rcmds[3].gas_mileage }}</p>
+          <p class="card-text"><strong>Passenger Capacity: </strong>{{ rcmds[3].passenger_capacity }}</p>
+          <p class="card-text"><strong>Price: </strong>{{ rcmds[3].msrp }}</p>
+        </div>
+      </div>
+    </div>        
+    <div class="col-sm-4">
+      <div class="card">
+        <img class="card-img-top" src={{ "/static/assets/" + rcmds[4].img_file }}>
+        <div class="card-body">
+          <h4 class="card-title"><strong>{{ rcmds[4].make + ' ' +rcmds[4].model }}</strong></h4>
+          <p class="card-text"><strong>Engine Displacement: </strong>{{ rcmds[4].displacement }}</p>
+          <p class="card-text"><strong>Horsepower: </strong>{{ rcmds[4].sae_net_horsepower_at_rpm }}</p>
+          <p class="card-text"><strong>Gas Mileage: </strong>{{ rcmds[4].gas_mileage }}</p>
+          <p class="card-text"><strong>Passenger Capacity: </strong>{{ rcmds[4].passenger_capacity }}</p>
+          <p class="card-text"><strong>Price: </strong>{{ rcmds[4].msrp }}</p>
+        </div>
+      </div>
+    </div>  
+    <div class="col-sm-4">
+      <div class="card">
+        <img class="card-img-top" src={{ "/static/assets/" + rcmds[5].img_file }}>
+        <div class="card-body">
+          <h4 class="card-title"><strong>{{ rcmds[5].make + ' ' +rcmds[5].model }}</strong></h4>
+          <p class="card-text"><strong>Engine Displacement: </strong>{{ rcmds[5].displacement }}</p>
+          <p class="card-text"><strong>Horsepower: </strong>{{ rcmds[5].sae_net_horsepower_at_rpm }}</p>
+          <p class="card-text"><strong>Gas Mileage: </strong>{{ rcmds[5].gas_mileage }}</p>
+          <p class="card-text"><strong>Passenger Capacity: </strong>{{ rcmds[5].passenger_capacity }}</p>
+          <p class="card-text"><strong>Price: </strong>{{ rcmds[5].msrp }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="startover">
+  <form action="/">
+    <button id="button" type="submit"></button>
+  </form>    
+</div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+  </body>
+</html>

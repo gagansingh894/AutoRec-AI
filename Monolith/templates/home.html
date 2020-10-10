@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Project</title>
+<!-- 	<link href= "/assets/css/index.css" rel="stylesheet" type="text/css"> -->
+  <link href= {{ url_for('static', filename="/css/index.css") }}  rel="stylesheet">
+</head>
+<body onload="openPopup()">
+	<div class="container">
+		<form name="myform" action="/upload" method="POST" enctype="multipart/form-data" >
+  			<input id="file-input" name="myImage" type="file" style="display:none" onchange="submitform()">
+  			<button id="button" type="button" onclick="document.getElementById('file-input').click();"></button>
+  		</form>
+	</div>
+	<div class="holder">
+  		<div class="preloader"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+	</div>
+	{% if msg != '' %}
+	<h3>{{ msg }}</h3>
+	{% endif %}
+	<a href="#popup" class="btn" onclick="openPopup()">?</a>
+	<div id="popup" class="popup">
+   		<a href="#" class="close"  onclick="closePopup()">&times;</a>
+   		<h2>Convolution Neural Network Based Recommendation System Web Application</h2>
+   		<p> Welcome!</p>
+   		<p> This application provides similar car recommendations based on the image of the car uploaded by the user. For the best experience, Please upload images of cars which are manufactured by:
+   		<ul>
+   			<li>Aston Martin</li>
+   			<li>Audi</li>
+   			<li>BMW</li>
+   			<li>Bentley</li>
+   			<li>Dodge</li>
+   			<li>Ferrari</li>
+   			<li>Ford</li>
+   			<li>Hyundai</li>
+   			<li>Jaguar</li>
+   			<li>Jeep</li>
+   			<li>Kia</li>
+   			<li>Lamborghini</li>
+   			<li>Land Rover</li>
+   			<li>Mercedes</li>
+   			<li>Porsche</li>
+   		</ul>
+   		Support for additional car manufacturers and models will be added in the future build.
+   		</p>
+   		<p> Thank You :)</p>
+	</div>
+	<a href="#" class="close-popup"></a>
+<script type="text/javascript">
+function submitform()
+{
+  var loading = document.getElementsByClassName('holder');
+  loading[0].style.display = 'block';
+  document.myform.submit();
+}
+function openPopup()
+{
+  var close = document.getElementsByClassName('close-popup');
+  close[0].style.visibility = 'visible';
+  close[0].style.opacity = 1;
+  var modal = document.getElementsByClassName('popup');
+  modal[0].style.visibility = 'visible';
+  modal[0].style.opacity = 1;
+}
+function closePopup()
+{
+  var modal = document.getElementsByClassName('popup');
+  var close = document.getElementsByClassName('close-popup');
+  modal[0].style.visibility = 'hidden';
+  modal[0].style.opacity = 0;	
+  close[0].style.visibility = 'hidden';
+  close[0].style.opacity = 0;
+}
+</script>
+</body>
+</html>
+
+
+
