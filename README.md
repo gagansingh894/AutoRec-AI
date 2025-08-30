@@ -24,7 +24,31 @@ The system detects the car in the image, classifies its make/model, and recommen
 
 ### 📊 Data  
 
-TODO: Add details about datasets used (image dataset, car metadata, sources, etc.)
+The dataset contains approx 60k images of different cars. The file name of each image
+contains the make and model followed by other details separated by `-`. 
+
+For example - the following file name `Acura_ILX_2013_28_16_110_15_4_70_55_179_39_FWD_5_4_4dr_Bbw` can be interpreted as
+
+| Field           | Value | Description |
+|-----------------|-------|-------------|
+| **Make**        | Acura | Manufacturer |
+| **Model**       | ILX   | Model Name |
+| **Year**        | 2013  | Model Year |
+| **MPG City**    | 28    | Miles per Gallon (City) |
+| **MPG Highway** | 16    | Miles per Gallon (Highway) |
+| **Horsepower**  | 110   | Engine Power (HP) |
+| **Torque**      | 15    | Torque (lb-ft) |
+| **Weight**      | 4     | Vehicle Weight (1000 lbs) |
+| **Length**      | 70    | Length (inches) |
+| **Width**       | 55    | Width (inches) |
+| **Height**      | 179   | Height (inches) |
+| **Wheelbase**   | 39    | Wheelbase (inches) |
+| **Drive Type**  | FWD   | Front-Wheel Drive |
+| **Doors**       | 5     | Number of Doors |
+| **Body Style**  | 4dr   | Four-Door Sedan |
+| **Color**       | Bbw   | Black/White/Blue (Color Code) |
+
+The dataset can be downloaded from [here](https://www.kaggle.com/datasets/prondeau/the-car-connection-picture-dataset/data).
 
 ---
 

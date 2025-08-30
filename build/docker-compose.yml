@@ -1,0 +1,34 @@
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_STORAGE_USE_HTTPS=false
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./minio-data:/data
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  minio-init:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      bash -c "
+        echo 'Waiting for MinIO...';
+        until (mc alias set myminio http://minio:9000 minioadmin minioadmin); do
+          echo 'Waiting for MinIO to start...';
+          sleep 5;
+        done;
+        echo 'Creating bucket mlflow...';
+        mc mb -p myminio/autorec-ai || echo 'Bucket already exists';
+        mc ls autorec-ai
+      "
