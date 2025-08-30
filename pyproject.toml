@@ -5,6 +5,11 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "boto3==1.39.11",
+    "dvc>=3.62.0",
+    "dvc-s3>=3.2.2",
+    "minio>=7.2.16",
     "torch==2.4",
+    "torchvision>=0.19.0",
     "ultralytics>=8.2.85",
 ]
