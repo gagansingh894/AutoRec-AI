@@ -11,7 +11,7 @@ help:
 
 # Start MinIO
 setup:
-	docker-compose -f build/docker-compose.yml up -d
+	docker-compose -f build/docker-compose.yml up --remove-orphans -d
 
 teardown:
 	docker-compose -f build/docker-compose.yml down
@@ -26,7 +26,11 @@ setup-dvc:
 track-dvc:
 	dvc add data/raw
 	git add data/raw.dvc .gitignore
-	git commit -m "feat: track raw dataset with DVC" || true
+	dvc add data/raw_grouped_by_car_make_model_year
+	git add data/raw_grouped_by_car_make_model_year.dvc .gitignore
+	dvc add data/car_metadata
+	git add data/car_metadata.dvc .gitignore
+	git commit -m "feat: track data with DVC" || true
 
 # Push dataset to remote
 push-dvc:
