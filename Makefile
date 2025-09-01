@@ -3,18 +3,25 @@
 # Default target
 help:
 	@echo "Available commands:"
-	@echo "  make setup        - Start Minio using Docker Compose"
-	@echo "  make setup-dvc    - Configure DVC remote"
-	@echo "  make track-dvc    - Track new data/raw in DVC"
-	@echo "  make push-dvc     - Push data to MinIO"
-	@echo "  make pull-dvc     - Pull data from MinIO"
+	@echo "  make setup        			- Start Minio using Docker Compose"
+	@echo "  make teardown     			- Teardown project infra"
+	@echo "  make build-docker-dev     	- Docker build project dev image - model deployment"
+	@echo "  make setup-dvc    			- Configure DVC remote"
+	@echo "  make track-dvc    			- Track new data/raw in DVC"
+	@echo "  make push-dvc     			- Push data to MinIO"
+	@echo "  make pull-dvc     			- Pull data from MinIO"
 
-# Start MinIO
+# Start project infra
 setup:
 	docker-compose -f build/docker-compose.yml up --remove-orphans -d
 
+# Teardown project infra
 teardown:
 	docker-compose -f build/docker-compose.yml down
+
+#
+build-docker-dev:
+	docker build -t gagansingh894/autorec-ai-dev:latest -f build/Dockerfile.dev .
 
 # Configure DVC remote
 setup-dvc:
