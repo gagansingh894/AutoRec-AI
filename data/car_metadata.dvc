@@ -1,0 +1,6 @@
+outs:
+- md5: 2f9481dc3d311bd55e3941b5a8e6c27c.dir
+  size: 146450
+  nfiles: 1
+  hash: md5
+  path: car_metadata
