@@ -1,6 +1,6 @@
 outs:
-- md5: d68dda000a6bf40157d0532585ad212c.dir
-  size: 710655114
-  nfiles: 63424
+- md5: 1f4e2a1ff6e1aa4d3a9ca4c1a4224f7d.dir
+  size: 3749136517
+  nfiles: 329036
   hash: md5
   path: raw_grouped_by_car_make_model_year
