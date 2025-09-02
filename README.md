@@ -58,6 +58,8 @@ The dataset can be downloaded from [here](https://www.kaggle.com/datasets/pronde
 
 ### ⚙️ Data Processing  
 
+![data processing.jpg](docs/data%20processing.jpg)
+
 #### Data Grouping and Labeling
 The initial dataset of 60k images is grouped by `make+model+year` which also acts label for the data.
 The name of the folder is the label which contains images of the corresponding car.
