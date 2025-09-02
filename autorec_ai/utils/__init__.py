@@ -83,3 +83,17 @@ yolo_classes = {
     "79": "toothbrush"
   }
 }
+
+import torch
+
+def get_device() -> str:
+    if torch.cuda.is_available():
+        return 'cuda'
+
+    if torch.backends.mps.is_available():
+        return 'mps'
+
+    return 'cpu'
+
+from autorec_ai.utils.logger import logger
+logger = logger.bind(name='autorec_ai')

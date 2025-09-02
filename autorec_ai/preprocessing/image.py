@@ -1,64 +1,71 @@
 import os
+import json
 
 import ultralytics
 from PIL import Image
 from torchvision import transforms
 
-from autorec_ai.ingest.config import GROUPED_BY_CAR_MAKE_MODEL_YEAR_DATA_PATH, PROCESSED_DATA_PATH
+from autorec_ai.ingest.config import GROUPED_BY_CAR_MAKE_MODEL_YEAR_DATA_PATH, PROCESSED_DATA_PATH, \
+    PROCESSED_AUGMENTATION_ANALYSIS_REPORT_DATA_PATH
+from autorec_ai.utils import get_device, logger
 
 CONF_SCORE_THRESHOLD = 0.6
 
 
 class Augementation:
     """
-    A class for augmenting car images using YOLO-based filtering and torchvision transformations.
+    A class for augmenting car and truck images using YOLO-based filtering and torchvision transformations.
 
-    This class scans a directory of images, filters them using a YOLO model
-    to keep only car- or truck-like objects, and then applies a series of
-    image augmentation transformations such as flipping, rotation, blurring,
-    and color jitter. The processed and augmented images are saved into an
-    output directory while preserving the folder structure.
+    This class scans a directory of images organized by labels (e.g., car make/model/year),
+    filters them using a YOLO detection model to keep only valid images containing cars or trucks,
+    and applies a set of configurable image augmentation transformations. Processed and augmented
+    images are saved into an output directory while preserving the folder structure.
 
     Attributes:
         _image_dir (str): Path to the directory containing grouped input images.
         _output_path (str): Path where processed and augmented images are saved.
-        transformations (dict): Dictionary of torchvision transforms to apply.
-        yolo_model (ultralytics.YOLO): YOLO model for object detection.
+        _analysis_report_path (str): Path where the JSON analysis report is written.
+        transformations (dict[str, torchvision.transforms.Transform]): Dictionary of torchvision
+            transformations to apply, keyed by operation name.
+        device (str): Torch device string (e.g., 'cpu', 'cuda', 'mps') used for YOLO inference.
+        yolo_model (ultralytics.YOLO): YOLO model instance used to validate images.
     """
 
-    def __init__(self, yolo_model: ultralytics.YOLO):
+    def __init__(self, yolo_model: str, device: str | None = None):
         """
         Initialize the augmentation pipeline.
 
         Args:
-            yolo_model (ultralytics.YOLO): A preloaded YOLO model used to filter
-                valid images (cars and trucks only).
+            yolo_model (str): Path to the YOLO model to filter valid images (cars and trucks only).
+            device (str | None): Optional Torch device for YOLO inference. Defaults to best available device.
         """
         self._image_dir = GROUPED_BY_CAR_MAKE_MODEL_YEAR_DATA_PATH
         self._output_path = PROCESSED_DATA_PATH
+        self._analysis_report_path = PROCESSED_AUGMENTATION_ANALYSIS_REPORT_DATA_PATH
         self.transformations = {
             'horizontal_flip':  transforms.RandomHorizontalFlip(),
             'random_rotation':  transforms.RandomRotation(10),
             'gaussian_blur':    transforms.GaussianBlur(kernel_size=(3, 3), sigma=(0.1, 1.0)),
             'color_jitter':     transforms.ColorJitter(),
         }
-        self.yolo_model = yolo_model
+        self.device = device if device is not None else get_device()
+        self.yolo_model = ultralytics.YOLO(model=yolo_model, task='detection', verbose=False)
 
     def _is_valid_image(self, image: Image) -> bool:
         """
-        Check if an image contains a car or truck with sufficient confidence.
+        Determine if an image contains a car or truck with sufficient confidence.
 
-        Uses the YOLO model to predict objects in the image and validates if
-        the top prediction belongs to class `2 (Car)` or `7 (Truck)` with
-        confidence above `CONF_SCORE_THRESHOLD`.
+        Uses the YOLO model to predict objects in the image. Returns True if at least
+        one detected object belongs to class 2 (Car) or class 7 (Truck) and meets
+        the confidence threshold.
 
         Args:
-            image (PIL.Image): The image to be validated.
+            image (PIL.Image.Image): Image to validate.
 
         Returns:
-            bool: True if the image contains a car or truck, False otherwise.
+            bool: True if the image contains a valid car or truck, False otherwise.
         """
-        result = self.yolo_model.predict(image, conf=CONF_SCORE_THRESHOLD)
+        result = self.yolo_model.predict(image, conf=CONF_SCORE_THRESHOLD, device=self.device, verbose=False)
         classes = result[0].boxes.cls.tolist()
         if len(classes) == 0:
             return False
@@ -68,36 +75,67 @@ class Augementation:
 
     def augment(self):
         """
-        Run the augmentation pipeline.
+        Run the full image augmentation pipeline.
 
-        Iterates through all subdirectories and images inside `_image_dir`.
-        For each `.jpg` image:
-          1. Validates the image using YOLO.
-          2. Copies the original image to the output directory if valid.
-          3. Applies all defined augmentations and saves augmented variants.
+        Workflow:
+        1. Scans `_image_dir` and groups images by label (subdirectory name).
+        2. Validates each image using `_is_valid_image`.
+        3. Saves valid original images to `_output_path` under their label folders.
+        4. Applies all transformations in `self.transformations` to each valid image
+           and saves the augmented variants.
+        5. Collects statistics on original, augmented, and invalid images per label.
+        6. Writes a JSON analysis report to `_analysis_report_path/image_augmentation_analysis.json`.
 
-        The method also prints statistics about the number of input images
-        visited and how many were processed successfully.
-
-        Example output:
-            Input Images: 63423, Processed Images: 50436
+        Notes:
+            - YOLO verbose logging is suppressed via `verbose=False`.
+            - Augmentation transformations include horizontal flip, rotation, Gaussian blur,
+              and color jitter.
+            - Invalid images (those without a car/truck) are tracked in the analysis report.
         """
-        visited, processed = 0, 0
+
+        group_files_by_labels = {}
+        analysis = {}
+
+        logger.info("grouping image paths by car label")
         for entry in os.scandir(self._image_dir):
             if entry.is_dir():
-                print(f'Augmenting: {entry.name}')
+                # print(f'Augmenting {str(label_cnt) + "/" + str(total_labels)}: {entry.name}')
                 os.makedirs(f'{self._output_path}/{entry.name}', exist_ok=True)
+                if entry.name not in group_files_by_labels:
+                    group_files_by_labels[entry.name] = []
                 for file in os.scandir(entry):
                     if file.name.endswith(".jpg"):
-                        image = Image.open(file)
-                        visited += 1
-                        if self._is_valid_image(image):
-                            processed += 1
-                            image.save(f'{self._output_path}/{entry.name}/{file.name}')
-                            for name, operation in self.transformations.items():
-                                augmented_image: Image = operation(image)
-                                augmented_image.save(
-                                    f'{self._output_path}/{entry.name}/{file.name.removesuffix(".jpg")}_{name}.jpg'
-                                )
+                        group_files_by_labels[entry.name].append(file)
 
-        print(f'Input Images: {visited}, Processed Images: {processed}') # Input Images: 63423, Processed Images: 50436
+        logger.info("starting image augmentation")
+        visited, processed, label_cnt, total_labels = 0, 0, 1, len(os.listdir(self._image_dir))
+        for label, files in group_files_by_labels.items():
+            logger.info(f'augmenting images: {label}')
+            original_cnt = 0
+            augmented_cnt = 0
+            invalid_images = []
+            for file in files:
+                image = Image.open(file)
+                original_cnt += 1
+                if not self._is_valid_image(image):
+                    invalid_images.append(file.name)
+                else:
+                    processed += 1
+                    image.save(f'{self._output_path}/{label}/{file.name}')
+                    for name, operation in self.transformations.items():
+                        augmented_image: Image = operation(image)
+                        augmented_image.save(
+                            f'{self._output_path}/{label}/{file.name.removesuffix(".jpg")}_{name}.jpg'
+                        )
+                        augmented_cnt += 1
+            analysis[label] = {
+                'original_images_count': original_cnt,
+                'augmented_images_count': augmented_cnt,
+                'invalid_images': {
+                    'count': len(invalid_images),
+                    'images': invalid_images
+                },
+            }
+
+        with open(f"{self._analysis_report_path}/image_augmentation_analysis.json", "w") as f:
+            json.dump(analysis, f, indent=2)
