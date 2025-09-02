@@ -5,7 +5,7 @@ import ultralytics
 from PIL import Image
 from torchvision import transforms
 
-from autorec_ai.ingest.config import GROUPED_BY_CAR_MAKE_MODEL_YEAR_DATA_PATH, PROCESSED_DATA_PATH, \
+from autorec_ai.utils.config import GROUPED_BY_CAR_MAKE_MODEL_YEAR_DATA_PATH, PROCESSED_DATA_PATH, \
     PROCESSED_AUGMENTATION_ANALYSIS_REPORT_DATA_PATH
 from autorec_ai.utils import get_device, logger
 

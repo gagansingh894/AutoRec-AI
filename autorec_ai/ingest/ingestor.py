@@ -4,7 +4,7 @@ from typing import Set, List, Dict, Tuple
 
 import pandas as pd
 
-from autorec_ai.ingest.config import RAW_DATA_PATH, GROUPED_BY_CAR_MAKE_MODEL_YEAR_DATA_PATH, METADATA_PATH
+from autorec_ai.utils.config import RAW_DATA_PATH, GROUPED_BY_CAR_MAKE_MODEL_YEAR_DATA_PATH, METADATA_PATH
 from autorec_ai.ingest.schema import Car, CarMetadata
 
 
