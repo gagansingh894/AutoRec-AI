@@ -42,6 +42,7 @@ class Augementation:
         self._image_dir = GROUPED_BY_CAR_MAKE_MODEL_YEAR_DATA_PATH
         self._output_path = PROCESSED_DATA_PATH
         self._analysis_report_path = PROCESSED_AUGMENTATION_ANALYSIS_REPORT_DATA_PATH
+        self._logger = logger.bind(component='preprocessing.image.Augmentation')
         self.transformations = {
             'horizontal_flip':  transforms.RandomHorizontalFlip(),
             'random_rotation':  transforms.RandomRotation(10),
