@@ -1,7 +1,5 @@
 # 🚗 AutoRecAI - Car Recommendation System
 
----
-
 This project is an **end-to-end system** for recommending cars based on an uploaded image.
 
 It combines:
@@ -19,6 +17,12 @@ The system uses **Python** for model development and training, and **Rust** for 
 AutoRecAI provides car recommendations based on an uploaded image.  
 
 The system detects the car in the image, classifies its make/model, and recommends similar cars using metadata based on user specified price range.
+
+---
+
+## 📌 Architecture  
+
+TODO: Add architecture diagram and explanation of components
 
 ---
 
@@ -54,13 +58,28 @@ The dataset can be downloaded from [here](https://www.kaggle.com/datasets/pronde
 
 ### ⚙️ Data Processing  
 
-TODO: Add details about data preprocessing, YOLO detection, MobileNet classification, and how car metadata is integrated for recommendations
+![data processing.jpg](docs/data%20processing.jpg)
+
+#### Data Grouping and Labeling
+The initial dataset of 60k images is grouped by `make+model+year` which also acts label for the data.
+The name of the folder is the label which contains images of the corresponding car.
+
+#### Image Augmentation
+In order to train our custom classification model, we need to generate some artificial data for our images, with the hope
+that the model will be able to generalise better. This will be achieved by augmenting our image data. In order to ensure
+the data quality is maintained we filter out images which are not of car (example - wheel, side mirror etc) using Yolo based
+filtering. This removes noise from our data set.
+
+#### Car Metadata 
+As mentioned in the above section, the filename of the image has information about the car. The metadata processing
+pipeline extracts this information from the images and uploads it to Qdrant vector database. This information
+will be later on used for making recommendations
 
 ---
 
-## 📌 Architecture  
+### 🤖Model Development
 
-TODO: Add architecture diagram and explanation of components
+TODO: Explain model building process
 
 ---
 
@@ -71,7 +90,7 @@ TODO: Add architecture diagram and explanation of components
 - **Object Detection Model**: YOLO  
 - **Image Classification Model**: MobileNet (Transfer Learning)  
 - **Recommendation System**: Content-Based Filtering  
-- - **Feature Store**: Qdrant (stores car embeddings for fast similarity search)  
+- **Feature Store**: Qdrant (stores car embeddings for fast similarity search)  
 - **Database**: PostgreSQL (used by MLflow for experiment and run metadata)  
 - **Experiment Tracking**: MLFlow  
 - **Workflow Orchestration**: Argo  
