@@ -1,6 +1,14 @@
+import random
+from typing import List
+
 import torch
 from torch import nn
+import torch.nn.functional as F
 from ultralytics import YOLO
+from ultralytics.engine.results import Results
+
+from autorec_ai.utils import get_device
+
 
 class CarMatch(nn.Module):
     """
@@ -26,40 +34,86 @@ class CarMatch(nn.Module):
             mobilenet_model (nn.Module): A pretrained MobileNet model.
         """
         super(CarMatch, self).__init__()
+        self.device = get_device()
         self.yolo = yolo
-        self.mobilenet = mobilenet_model
+        self.yolo.to(self.device)
+        self.mobilenet = mobilenet_model.to(self.device)
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, flat_images: torch.Tensor) -> torch.Tensor:
         """
-        Forward pass through the CarMatch model.
+        Forward pass through the model.
 
         Args:
-            x (torch.Tensor): Batch of input images, shape [batch_size, 3, H, W].
+            flat_images (torch.Tensor):
+                - A batch of flattened RGB images of shape [batch_size, H*W*3],
+                  or a single flattened image of shape [H*W*3].
+                - Images are expected to be in RGB format, and the caller is responsible
+                  for flattening the image(s) before passing them to the model.
 
         Returns:
-            outputs (torch.Tensor or None): MobileNet classification logits for each detected ROI.
-                Shape: [num_rois, num_classes]. Returns None if no ROIs are detected.
-            detections (list[Tensor]): YOLO detections for each image. Each element contains
-                bounding boxes, confidence scores, and class predictions.
+            torch.Tensor: Raw model outputs (logits) of shape [batch_size, num_classes].
+                - Each row corresponds to a single input image.
+                - The caller is responsible for converting logits to class predictions
+                  (e.g., using argmax) or probabilities (e.g., using softmax) as needed.
+
+        Notes:
+            - This method performs any necessary preprocessing internally
+              (e.g., reshaping, YOLO + MobileNet preprocessing).
+            - No normalization, softmax, or argmax is applied inside this method;
+              it purely computes raw model scores.
         """
+
+        # Ensure batch
+        if flat_images.ndim == 1:
+            flat_images = flat_images.unsqueeze(0)
+        elif flat_images.ndim != 2:
+            raise ValueError(
+                f"Expected flattened image tensor of shape (H*W*3) or (B, H*W*3), got {flat_images.ndim}D"
+            )
+
+        # Validate length
+        expected_len = 416 * 416 * 3
+        if flat_images.size(1) != expected_len:
+            raise ValueError(
+                f"Expected flattened 416x416 RGB image (length {expected_len}), "
+                f"got {flat_images.size(1)} instead."
+            )
+
+        # Reshape to [B, 3, 416, 416] and normalize
+        flat_images = flat_images.contiguous()
+        batch_size = flat_images.size(0)
+        images = flat_images.reshape(batch_size, 416, 416, 3).permute(0, 3, 1, 2).float()
+        images = images.contiguous()
+        images = images / 255.0
+        images = images.to(self.device)
+
         # YOLO detections
-        detections = self.yolo(x)
+        detections: List[Results] = self.yolo(images, verbose=False)
 
-        # Crop the images with ROIs
-        rois = []
-        for image, detection in zip(x, detections):
-            for box in detection[:, :4]:
-                x1, y1, x2, y2 = box.int()
-                rois.append(image[:, y1:y2, x1:x2])
+        cropped_rois = []
+        for image_idx, detection in enumerate(detections):
+            image = images[image_idx]  # [3, H, W]
 
-        if rois:  # Check if there are any detected ROIs
-            # Resize each ROI to 224x224 and stack into a batch
-            inp = torch.stack([
-                torch.nn.functional.interpolate(r.unsqueeze(0), size=(224, 224)).squeeze(0)
-                for r in rois
-            ])
-            outputs = self.mobilenet(inp)
-        else:
-            outputs = None
+            if detection.boxes is not None and len(detection.boxes) > 0:
+                boxes = detection.boxes.data  # [num_boxes, 6]: x1, y1, x2, y2, conf, cls
+                mask = (boxes[:, 5] == 2) | (boxes[:, 5] == 7)  # car/truck
+                filtered = boxes[mask]
 
-        return outputs, detections
+                if len(filtered) > 0:
+                    top_idx = filtered[:, 4].argmax()  # highest confidence
+                    top_box = filtered[top_idx]
+                    x1, y1, x2, y2 = top_box[:4].int()
+                    roi = image[:, y1:y2, x1:x2]
+                    cropped_rois.append(roi)
+                else:
+                    cropped_rois.append(torch.zeros((3, 224, 224), device=image.device))  # empty
+            else:
+                cropped_rois.append(torch.zeros((3, 224, 224), device=image.device))  # empty
+
+
+        inp = torch.stack([F.interpolate(roi.unsqueeze(0), size=(224, 224)).squeeze(0) for roi in cropped_rois])
+        # Normalize using ImageNet stats (same as training)
+        mean = torch.tensor([0.485, 0.456, 0.406], device=self.device).view(1, 3, 1, 1)
+        std = torch.tensor([0.229, 0.224, 0.225], device=self.device).view(1, 3, 1, 1)
+        inp = (inp - mean) / std
+        return self.mobilenet(inp)
