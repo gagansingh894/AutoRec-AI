@@ -47,7 +47,7 @@ class Vectorizer:
         # Metadata columns to be preserved as payloads in Qdrant
         self._payload_cols = ['make', 'model', 'year']
 
-    def vectorize(self):
+    def __call__(self, *args, **kwargs):
         """
         Main entrypoint for the vectorization process.
 
