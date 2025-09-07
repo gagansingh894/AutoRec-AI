@@ -8,6 +8,7 @@ from ultralytics import YOLO
 from ultralytics.engine.results import Results
 
 from autorec_ai.utils import get_device
+from autorec_ai.utils.config import MODEL_PATH
 
 
 class CarMatch(nn.Module):
@@ -25,19 +26,17 @@ class CarMatch(nn.Module):
         mobilenet (nn.Module): Trained MobileNet classification model.
     """
 
-    def __init__(self, yolo: YOLO, mobilenet_model: nn.Module):
+    def __init__(self):
         """
         Initializes the CarMatch model.
 
-        Args:
-            yolo (YOLO): A YOLO detection model instance.
-            mobilenet_model (nn.Module): A pretrained MobileNet model.
         """
         super(CarMatch, self).__init__()
         self.device = get_device()
-        self.yolo = yolo
-        self.yolo.to(self.device)
-        self.mobilenet = mobilenet_model.to(self.device)
+        yolo_ckpt = torch.load(f'{MODEL_PATH}/yolov8x.pt', weights_only=False)
+        self.yolo = yolo_ckpt['model'].to(self.device).float()
+        # self.mobilenet = torch.load(f'{MODEL_PATH}/autorec_mobilenet.pt', weights_only=False)
+        # self.mobilenet.to(self.device)
 
     def forward(self, flat_images: torch.Tensor) -> torch.Tensor:
         """
@@ -79,6 +78,39 @@ class CarMatch(nn.Module):
                 f"got {flat_images.size(1)} instead."
             )
 
+        self._detect(flat_images)
+
+
+
+        # cropped_rois = []
+        # for image_idx, detection in enumerate(detections):
+        #     image = images[image_idx]  # [3, H, W]
+        #
+        #     if detection.boxes is not None and len(detection.boxes) > 0:
+        #         boxes = detection.boxes.data  # [num_boxes, 6]: x1, y1, x2, y2, conf, cls
+        #         mask = (boxes[:, 5] == 2) | (boxes[:, 5] == 7)  # car/truck
+        #         filtered = boxes[mask]
+        #
+        #         if len(filtered) > 0:
+        #             top_idx = filtered[:, 4].argmax()  # highest confidence
+        #             top_box = filtered[top_idx]
+        #             x1, y1, x2, y2 = top_box[:4].int()
+        #             roi = image[:, y1:y2, x1:x2]
+        #             cropped_rois.append(roi)
+        #         else:
+        #             cropped_rois.append(torch.zeros((3, 224, 224), device=image.device))  # empty
+        #     else:
+        #         cropped_rois.append(torch.zeros((3, 224, 224), device=image.device))  # empty
+        #
+        #
+        # inp = torch.stack([F.interpolate(roi.unsqueeze(0), size=(224, 224)).squeeze(0) for roi in cropped_rois])
+        # # Normalize using ImageNet stats (same as training)
+        # mean = torch.tensor([0.485, 0.456, 0.406], device=self.device).view(1, 3, 1, 1)
+        # std = torch.tensor([0.229, 0.224, 0.225], device=self.device).view(1, 3, 1, 1)
+        # inp = (inp - mean) / std
+        # return self.mobilenet(inp)
+
+    def _detect(self, flat_images: torch.Tensor):
         # Reshape to [B, 3, 416, 416] and normalize
         flat_images = flat_images.contiguous()
         batch_size = flat_images.size(0)
@@ -88,32 +120,23 @@ class CarMatch(nn.Module):
         images = images.to(self.device)
 
         # YOLO detections
-        detections: List[Results] = self.yolo(images, verbose=False)
+        preds = self.yolo(images)
+        print(preds[0].shape)
 
-        cropped_rois = []
-        for image_idx, detection in enumerate(detections):
-            image = images[image_idx]  # [3, H, W]
-
-            if detection.boxes is not None and len(detection.boxes) > 0:
-                boxes = detection.boxes.data  # [num_boxes, 6]: x1, y1, x2, y2, conf, cls
-                mask = (boxes[:, 5] == 2) | (boxes[:, 5] == 7)  # car/truck
-                filtered = boxes[mask]
-
-                if len(filtered) > 0:
-                    top_idx = filtered[:, 4].argmax()  # highest confidence
-                    top_box = filtered[top_idx]
-                    x1, y1, x2, y2 = top_box[:4].int()
-                    roi = image[:, y1:y2, x1:x2]
-                    cropped_rois.append(roi)
-                else:
-                    cropped_rois.append(torch.zeros((3, 224, 224), device=image.device))  # empty
-            else:
-                cropped_rois.append(torch.zeros((3, 224, 224), device=image.device))  # empty
-
-
+    def _classify(self, cropped_rois: list) -> torch.Tensor:
         inp = torch.stack([F.interpolate(roi.unsqueeze(0), size=(224, 224)).squeeze(0) for roi in cropped_rois])
         # Normalize using ImageNet stats (same as training)
         mean = torch.tensor([0.485, 0.456, 0.406], device=self.device).view(1, 3, 1, 1)
         std = torch.tensor([0.229, 0.224, 0.225], device=self.device).view(1, 3, 1, 1)
         inp = (inp - mean) / std
         return self.mobilenet(inp)
+
+    def save(self):
+        # By moving it to CPU before saving, we can ensure it works on all backends -
+        # self.mobilenet.cpu()
+        # self.mobilenet.eval()
+        self.yolo.to('cpu')
+        self.yolo.eval()
+        # torch.save(self, f'{MODEL_PATH}/autorec_carmatch.pt')
+        traced_model = torch.jit.trace(self, torch.randn(1, 416*416*3))
+        traced_model.save(f'{MODEL_PATH}/torch_script_autorec_carmatch.pt')
