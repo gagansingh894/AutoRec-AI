@@ -9,7 +9,7 @@ It combines:
 
 The system uses **Python** for model development and training, and **Rust** for high-performance model deployment via gRPC. It also provides a **UI (TBD)** for users to upload images and receive recommendations.
 
-![Status](https://img.shields.io/badge/Status-Updating-blue)
+![Status](https://img.shields.io/badge/Status-In%20Progress-yellow)
 ---
 
 ## 📖 Overview  
@@ -22,7 +22,37 @@ The system detects the car in the image, classifies its make/model, and recommen
 
 ## 📌 Architecture  
 
-TODO: Add architecture diagram and explanation of components
+![autorec-architecture.jpg](docs/autorec-architecture.jpg)
+
+The system consists of the following components:
+
+1. **Data Ingestion**
+   - Reads raw image data, grouped data, and metadata from Minio (object storage).
+   - Processes and persists grouped data and extracts car-specific metadata.
+
+2. **Image Augmentation**
+   - Performs image augmentations on raw data to increase training data diversity.
+   - Augmented images are persisted back to Minio.
+
+3. **Machine Learning Models**
+   - **Custom MobileNet Model:** Trained on augmented image data for feature extraction.
+   - **CarMatch Model:** Uses extracted features to match cars with similar attributes.
+   - All trained models are persisted for reuse.
+
+4. **Metadata Processing**
+   - Processes car metadata and stores feature vectors in Qdrant, a vector database.
+
+5. **Experiment Tracking**
+   - Model training experiments and performance metrics are tracked using MLflow.
+
+6. **Inference Server**
+   - Provides car matching functionality.
+   - Receives images and metadata from the UI, performs inference using trained models, and returns results.
+   - Sends vectors to Qdrant for similarity search.
+
+7. **User Interface (UI)**
+   - Allows users to upload images and query car matches.
+   - Interacts with the inference server to display results.
 
 ---
 
