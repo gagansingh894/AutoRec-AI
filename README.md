@@ -79,7 +79,62 @@ will be later on used for making recommendations
 
 ### 🤖Model Development
 
-TODO: Explain model building process
+We have built **2 primary models** for the AutoRec-AI project:
+
+
+### CarMatch
+
+**Purpose:** Detects cars in images and classifies them into fine-grained categories.
+
+**Architecture:**
+
+- **YOLOv8:** Detects bounding boxes of cars and trucks in input images.
+- **MobileNetV3:** Classifies cropped car ROIs into one of 2007 classes.
+
+**Workflow:**
+
+1. Input images are flattened and passed to `CarMatch.forward()`.
+2. `_detect()` reshapes images, runs YOLO detection, and extracts the **highest-scoring car/truck ROIs**.
+3. ROIs are resized to 224×224 and normalized.
+4. `_classify()` feeds ROIs to MobileNet for final classification.
+
+```
+---> CarMatch.forward() --> _detect() --> YOLOv8
+                                   |--> Extract highest-scoring ROIs
+                                   |--> Resize to 224x224
+                                   |--> _classify() --> MobileNetV3 --> Output logits
+```
+
+**Saving the Model:**
+
+- The `save()` method allows:
+  - Saving the **native PyTorch model**.
+  - Optional **TorchScript tracing** using an example input tensor of shape `[batch_size, 416*416*3]`.
+- **Example input for tracing:** A tensor containing flattened images, e.g., `[batch_size, 416*416*3]`, where some images may be empty (all zeros) if no car is detected.
+
+### CustomMobileNet
+
+**Purpose:** Standalone MobileNetV3 for transfer learning on your dataset.
+
+**Architecture:** MobileNetV3 large backbone with classifier replaced by a linear layer matching the number of classes in your dataset.
+
+**Workflow:**
+
+1. Input images are resized to 224×224, normalized using ImageNet stats, and batched.
+2. Forward pass returns raw logits.
+3. `train_and_evaluate()` handles training with CrossEntropyLoss and evaluates accuracy on the test set.
+
+**Saving the Model:**
+
+- Native PyTorch model is saved to disk.
+- TorchScript tracing uses a dummy input of shape `[1, 3, 224, 224]`.
+
+
+
+#### Notes
+
+- For both models, predictions are logits; you need `argmax` or `softmax` to get class indices or probabilities.
+- **Class mapping:** `ImageFolder` is used for datasets; `class_to_idx` provides mapping of class names to indices, and `idx_to_class` gives index → class name lookup.
 
 ---
 
