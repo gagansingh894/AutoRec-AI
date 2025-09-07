@@ -14,7 +14,7 @@ class Ingestor:
         self.data_path = RAW_DATA_PATH
         self._output_path = GROUPED_BY_CAR_MAKE_MODEL_YEAR_DATA_PATH
 
-    def ingest(self):
+    def __call__(self, *args, **kwargs):
         cars, faulty = self._group_by_car_make_model_year()
         self._create_grouped_data(cars)
 

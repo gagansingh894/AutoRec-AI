@@ -5,11 +5,11 @@ import ultralytics
 from PIL import Image
 from torchvision import transforms
 
-from autorec_ai.utils.config import GROUPED_BY_CAR_MAKE_MODEL_YEAR_DATA_PATH, PROCESSED_DATA_PATH, \
+from autorec_ai.utils.config import GROUPED_BY_CAR_MAKE_MODEL_YEAR_DATA_PATH, PROCESSED_GROUPED_BY_CAR_MAKE_MODEL_YEAR_DATA_PATH, \
     PROCESSED_AUGMENTATION_ANALYSIS_REPORT_DATA_PATH
 from autorec_ai.utils import get_device, logger
 
-CONF_SCORE_THRESHOLD = 0.6
+CONF_SCORE_THRESHOLD = 0.75
 
 
 class Augementation:
@@ -40,7 +40,7 @@ class Augementation:
             device (str | None): Optional Torch device for YOLO inference. Defaults to best available device.
         """
         self._image_dir = GROUPED_BY_CAR_MAKE_MODEL_YEAR_DATA_PATH
-        self._output_path = PROCESSED_DATA_PATH
+        self._output_path = PROCESSED_GROUPED_BY_CAR_MAKE_MODEL_YEAR_DATA_PATH
         self._analysis_report_path = PROCESSED_AUGMENTATION_ANALYSIS_REPORT_DATA_PATH
         self._logger = logger.bind(component='preprocessing.image.Augmentation')
         self.transformations = {
@@ -74,7 +74,7 @@ class Augementation:
         # TODO: Will be updated as part of distributed pipeline PR in future.
         return result[0].boxes.cls.tolist()[0] in [2, 7]  # 2 -> Car, 7 -> Truck
 
-    def augment(self):
+    def __call__(self, *args, **kwargs):
         """
         Run the full image augmentation pipeline.
 
@@ -108,10 +108,10 @@ class Augementation:
                     if file.name.endswith(".jpg"):
                         group_files_by_labels[entry.name].append(file)
 
-        logger.info("starting image augmentation")
+        logger.info(f"starting image augmentation using {self.device}")
         visited, processed, label_cnt, total_labels = 0, 0, 1, len(os.listdir(self._image_dir))
         for label, files in group_files_by_labels.items():
-            logger.info(f'augmenting images: {label}')
+            logger.info(f'[{label_cnt}/{total_labels}] augmenting images: {label}')
             original_cnt = 0
             augmented_cnt = 0
             invalid_images = []
@@ -129,6 +129,7 @@ class Augementation:
                             f'{self._output_path}/{label}/{file.name.removesuffix(".jpg")}_{name}.jpg'
                         )
                         augmented_cnt += 1
+
             analysis[label] = {
                 'original_images_count': original_cnt,
                 'augmented_images_count': augmented_cnt,
@@ -137,6 +138,8 @@ class Augementation:
                     'images': invalid_images
                 },
             }
+
+            label_cnt += 1
 
         with open(f"{self._analysis_report_path}/image_augmentation_analysis.json", "w") as f:
             json.dump(analysis, f, indent=2)

@@ -47,7 +47,7 @@ class Vectorizer:
         # Metadata columns to be preserved as payloads in Qdrant
         self._payload_cols = ['make', 'model', 'year']
 
-    def vectorize(self):
+    def __call__(self, *args, **kwargs):
         """
         Main entrypoint for the vectorization process.
 
@@ -90,7 +90,6 @@ class Vectorizer:
             df (pd.DataFrame): Processed DataFrame with one-hot encoded and numerical features.
         """
         vector_size = df.shape[1] - len(self._payload_cols)
-        print(vector_size)
 
         # Create collection if it doesn't exist
         if not self.qdrant.collection_exists(QDRANT_COLLECTION_NAME):
@@ -103,11 +102,8 @@ class Vectorizer:
             )
 
         vectors, payloads = self._get_vectors_payloads(df)
+        ids = list(range(vector_size))
 
-        # BUG: this should use len(vectors), not vector_size
-        ids = list(range(len(vectors)))
-
-        print(len(ids), len(vectors[0]), len(payloads[0]))
 
         points = [
             models.PointStruct(id=idx, vector=vector, payload=payload)
@@ -115,6 +111,8 @@ class Vectorizer:
         ]
 
         self.qdrant.upload_points(collection_name=QDRANT_COLLECTION_NAME, points=points)
+
+        self._logger.info('Successfully vectorized metadata and uploaded to Qdrant')
 
     def _get_vectors_payloads(self, df: pd.DataFrame) -> Tuple[defaultdict, Any]:
         """
