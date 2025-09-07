@@ -44,6 +44,7 @@ class CustomMobileNet(nn.Module):
             shuffle=False
         )
         self.num_classes = len(ImageFolder(f'{PROCESSED_DATA_PATH}/train', transform=None).classes)
+        self.idx_to_class = {v: k for k, v in self._train_dataloader.dataset.class_to_idx.items()}
 
         # Load Model
         self.mobilenet = mobilenet_v3_large()
