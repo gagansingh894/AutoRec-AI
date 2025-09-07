@@ -6,7 +6,7 @@ from torchvision.models import mobilenet_v3_large
 from torchvision.datasets import ImageFolder
 
 from autorec_ai.utils import get_device, logger
-from autorec_ai.utils.config import CUSTOM_MOBILENET_PATH, PROCESSED_DATA_PATH
+from autorec_ai.utils.config import MODEL_PATH, PROCESSED_DATA_PATH
 
 
 class CustomMobileNet(nn.Module):
@@ -120,6 +120,7 @@ class CustomMobileNet(nn.Module):
     def save(self):
         # By moving it to CPU before saving, we can ensure it works on all backends -
         self.mobilenet.cpu()
-        torch.save(self.mobilenet, f'{CUSTOM_MOBILENET_PATH}/autorec_mobilenet.pt')
+        self.mobilenet.eval()
+        torch.save(self.mobilenet, f'{MODEL_PATH}/autorec_mobilenet.pt')
         traced_model = torch.jit.trace(self.mobilenet, torch.randn(1, 3, 224, 224))
-        traced_model.save(f'{CUSTOM_MOBILENET_PATH}/torch_script_autorec_mobilenet.pt')
+        traced_model.save(f'{MODEL_PATH}/torch_script_autorec_mobilenet.pt')
